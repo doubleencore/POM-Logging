@@ -10,9 +10,9 @@ import Foundation
 class PerformanceLog: NSObject {
     
     struct EnvironmentKeys {
-        static let enabled = "PerfLogEnabled"
-        static let clearOnLaunch = "PerfLogClearOnLaunch"
-        static let filename = "PerfLogName"
+        static let enabled = "PerformanceLogEnabled"
+        static let clearOnLaunch = "PerformanceLogClearOnLaunch"
+        static let filename = "PerformanceLogName"
     }
     
     struct Task: Equatable {
@@ -36,7 +36,7 @@ class PerformanceLog: NSObject {
     
     static private var tasks: [Task] = []
     static private var adaptors: [LogAdaptor] = []
-    static private var queue: DispatchQueue = DispatchQueue(label: "PerfLog")
+    static private var queue: DispatchQueue = DispatchQueue(label: "PerformanceLog")
     
     static private var launchTask: Task?
     

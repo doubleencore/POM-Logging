@@ -10,8 +10,6 @@ import Foundation
 
 extension PerformanceLog {
     static func measure(operation: Operation, name: String, category: String) {
-        guard enabled else { return }
-        
         let observer = OperationPerformanceObserver(name: name, category: category)
         operation.addObserver(observer)
     }
