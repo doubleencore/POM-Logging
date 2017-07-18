@@ -56,7 +56,7 @@ class PerformanceLog: NSObject {
         end(launchTask)
     }
 	
-	@discardableResult
+    @discardableResult
     static func start(_ task: String, category: String) -> Task {
         let task = Task(name: task, category: category, startDate: Date())
         queue.async {
