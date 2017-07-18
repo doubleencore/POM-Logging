@@ -73,11 +73,11 @@ class PerformanceLog: NSObject {
         }
     }
 	
-    static func end(taskNamed: String) {
+    static func end(taskNamed name: String) {
         var foundTask: Task?
 
         queue.sync {
-            foundTask = tasks.filter { $0.name == taskName }.first
+            foundTask = tasks.filter { $0.name == name }.first
         }
 
         if let task = foundTask {
