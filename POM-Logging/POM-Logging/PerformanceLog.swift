@@ -55,7 +55,8 @@ class PerformanceLog: NSObject {
         guard let launchTask = launchTask else { return }
         end(launchTask)
     }
-    
+	
+	@discardableResult
     static func start(_ task: String, category: String) -> Task {
         let task = Task(name: task, category: category, startDate: Date())
         queue.async {
@@ -69,6 +70,18 @@ class PerformanceLog: NSObject {
         
         queue.async {
             tasks = tasks.filter({ $0 != task })
+        }
+    }
+	
+    static func end(taskNamed: String) {
+        var foundTask: Task?
+
+        queue.sync {
+            foundTask = tasks.filter { $0.name == taskName }.first
+        }
+
+        if let task = foundTask {
+            end(task)
         }
     }
     
