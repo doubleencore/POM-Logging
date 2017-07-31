@@ -55,7 +55,8 @@ class PerformanceLog: NSObject {
         guard let launchTask = launchTask else { return }
         end(launchTask)
     }
-    
+	
+    @discardableResult
     static func start(_ task: String, category: String) -> Task {
         let task = Task(name: task, category: category, startDate: Date())
         queue.async {
@@ -69,6 +70,22 @@ class PerformanceLog: NSObject {
         
         queue.async {
             tasks = tasks.filter({ $0 != task })
+        }
+    }
+
+    /// Method to end a specific task by name.
+    /// This method is provided for edge cases where it is difficult to maintain a reference to the `Task` object returned by calling start(task: category:)
+    /// Ex: A task should be started in the AppDelegate but needs to be ended when a particular view controller has appeared.
+    /// Without careful consideration it is possible to have multiple `Task` objects running with the same name and this method will only end the first one it finds.
+    static func end(taskNamed name: String) {
+        var foundTask: Task?
+
+        queue.sync {
+            foundTask = tasks.filter { $0.name == name }.first
+        }
+
+        if let task = foundTask {
+            end(task)
         }
     }
     
