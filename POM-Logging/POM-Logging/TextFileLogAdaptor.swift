@@ -1,15 +1,20 @@
 //
 //  TextFileLogger.swift
-//  POM-Logging
-//
 //  Copyright © 2017 Possible Mobile. All rights reserved.
 //
 
 import Foundation
 
-class TextFileLogAdaptor: LogAdaptor {
+
+class TextFileLogAdaptor {
+
+    // MARK: - Properties
+
     let fileHandle: FileHandle?
-    
+
+
+    // MARK: - Initialization
+
     init(logName: String, clear: Bool) {
         let docsPath = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).last!
         let filePath = docsPath.appending("/\(logName)")
@@ -25,10 +30,9 @@ class TextFileLogAdaptor: LogAdaptor {
         fileHandle = FileHandle(forWritingAtPath: filePath)
         print("📝 Log started at \(filePath)")
     }
-    
-    func log(_ s: String) {
-        write(line: s)
-    }
+
+
+    // MARK: - Public
     
     func write(line: String) {
         guard let fileHandle = fileHandle else { return }
@@ -36,5 +40,16 @@ class TextFileLogAdaptor: LogAdaptor {
         
         fileHandle.seekToEndOfFile()
         fileHandle.write(data)
+    }
+}
+
+
+// MARK: - <LogAdaptor>
+
+extension TextFileLogAdaptor: LogAdaptor {
+
+    func didEndTask(_ task: PerformanceLog.Task) {
+        let message = "⏱ \(Date()), \(task.formattedDurationDescription)"
+        write(line: message)
     }
 }

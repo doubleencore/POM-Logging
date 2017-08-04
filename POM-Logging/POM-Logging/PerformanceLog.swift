@@ -1,11 +1,10 @@
 //
 //  PerformanceLogger.swift
-//  POM-Logging
-//
 //  Copyright © 2017 Possible Mobile. All rights reserved.
 //
 
 import Foundation
+
 
 class PerformanceLog: NSObject {
     
@@ -15,7 +14,7 @@ class PerformanceLog: NSObject {
         static let filename = "PerformanceLogName"
     }
     
-    struct Task: Equatable {
+    struct Task: Equatable, CustomStringConvertible {
         let name: String
         let category: String
         let startDate: Date
@@ -24,6 +23,16 @@ class PerformanceLog: NSObject {
             let startTimestamp = startDate.timeIntervalSinceReferenceDate
             let endTimestamp = Date().timeIntervalSinceReferenceDate
             return Double(endTimestamp - startTimestamp)
+        }
+
+        var description: String {
+            let value = "\(name): (\(category)) started at \(startDate)"
+            return value
+        }
+
+        var formattedDurationDescription: String {
+            let value = "(\(category)) \(name): \(duration)"
+            return value
         }
         
         public static func ==(lhs: Task, rhs: Task) -> Bool {
@@ -47,8 +56,7 @@ class PerformanceLog: NSObject {
     }
     
     static func launchStarted() {
-        mark("Begin Session")
-        launchTask = Task(name: "Launch", category: "Launch", startDate: Date())
+        launchTask = start("Launch", category: "Launch")
     }
     
     static func launchFinished() {
@@ -59,14 +67,18 @@ class PerformanceLog: NSObject {
     @discardableResult
     static func start(_ task: String, category: String) -> Task {
         let task = Task(name: task, category: category, startDate: Date())
+
+        notifyAdaptorsDidStartTask(task)
+
         queue.async {
             tasks.append(task)
         }
+
         return task
     }
     
     static func end(_ task: Task) {
-        logPerf("\(Date()), \(task.category), \(task.name), \(task.duration)")
+        notifyAdaptorsDidEndTask(task)
         
         queue.async {
             tasks = tasks.filter({ $0 != task })
@@ -89,21 +101,21 @@ class PerformanceLog: NSObject {
         }
     }
     
-    static func mark(_ marker: String) {
-        logPerf("\(Date()), Marker, \(marker), N/A")
-    }
-    
     static func measure(_ task: String, category: String, activity: (()->())) {
         let task = start(task, category: category)
         activity()
         end(task)
     }
-    
-    static func logPerf(_ s: String) {
+
+    private static func notifyAdaptorsDidStartTask(_ task: PerformanceLog.Task) {
         queue.async {
-            for adaptor in adaptors {
-                adaptor.log("⏱ \(s)")
-            }
+            adaptors.forEach { $0.didStartTask(task) }
+        }
+    }
+
+    private static func notifyAdaptorsDidEndTask(_ task: PerformanceLog.Task) {
+        queue.async {
+            adaptors.forEach { $0.didEndTask(task) }
         }
     }
 }
