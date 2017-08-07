@@ -1,12 +1,12 @@
 //
-//  TextFileLogger.swift
+//  TextFileTaskLogAdaptor.swift
 //  Copyright © 2017 Possible Mobile. All rights reserved.
 //
 
 import Foundation
 
 
-class TextFileLogAdaptor {
+class TextFileTaskLogAdaptor {
 
     // MARK: - Properties
 
@@ -46,7 +46,7 @@ class TextFileLogAdaptor {
 
 // MARK: - <TaskLogAdaptor>
 
-extension TextFileLogAdaptor: TaskLogAdaptor {
+extension TextFileTaskLogAdaptor: TaskLogAdaptor {
 
     func task(_ task: PerformanceLog.Task, didCrossWaypoint waypoint: String) {
         let message = "🏴 \(task.category) \(task.name): \(waypoint)"

@@ -1,12 +1,12 @@
 //
-//  ConsoleLogger.swift
+//  ConsoleTaskLogAdaptor.swift
 //  Copyright © 2017 Possible Mobile. All rights reserved.
 //
 
 import Foundation
 
 
-class ConsoleLogAdaptor: TaskLogAdaptor {
+class ConsoleTaskLogAdaptor: TaskLogAdaptor {
 
     func task(_ task: PerformanceLog.Task, didCrossWaypoint waypoint: String) {
         let message = "🏴 \(task.category) \(task.name): \(waypoint)"
