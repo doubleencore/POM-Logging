@@ -44,12 +44,12 @@ class PerformanceLog: NSObject {
     }
     
     static private var tasks: [Task] = []
-    static private var adaptors: [LogAdaptor] = []
+    static private var adaptors: [TaskLogAdaptor] = []
     static private var queue: DispatchQueue = DispatchQueue(label: "PerformanceLog")
     
     static private var launchTask: Task?
     
-    static func attach(adaptor: LogAdaptor) {
+    static func attach(adaptor: TaskLogAdaptor) {
         queue.async {
             adaptors.append(adaptor)
         }
@@ -76,6 +76,12 @@ class PerformanceLog: NSObject {
 
         return task
     }
+
+    static func task(_ taskName: String, didCrossWaypoint waypoint: String) {
+        guard let task = taskNamed(taskName) else { return }
+
+        notifyAdaptorsTask(task, didCrossWaypoint: waypoint)
+    }
     
     static func end(_ task: Task) {
         notifyAdaptorsDidEndTask(task)
@@ -90,15 +96,9 @@ class PerformanceLog: NSObject {
     /// Ex: A task should be started in the AppDelegate but needs to be ended when a particular view controller has appeared.
     /// Without careful consideration it is possible to have multiple `Task` objects running with the same name and this method will only end the first one it finds.
     static func end(taskNamed name: String) {
-        var foundTask: Task?
+        guard let task = taskNamed(name) else { return }
 
-        queue.sync {
-            foundTask = tasks.filter { $0.name == name }.first
-        }
-
-        if let task = foundTask {
-            end(task)
-        }
+        end(task)
     }
     
     static func measure(_ task: String, category: String, activity: (()->())) {
@@ -107,9 +107,28 @@ class PerformanceLog: NSObject {
         end(task)
     }
 
+
+    // MARK: - Private
+
+    private static func taskNamed(_ taskName: String) -> PerformanceLog.Task? {
+        var foundTask: Task?
+
+        queue.sync {
+            foundTask = tasks.filter { $0.name == taskName }.first
+        }
+
+        return foundTask
+    }
+
     private static func notifyAdaptorsDidStartTask(_ task: PerformanceLog.Task) {
         queue.async {
             adaptors.forEach { $0.didStartTask(task) }
+        }
+    }
+
+    private static func notifyAdaptorsTask(_ task: PerformanceLog.Task, didCrossWaypoint waypoint: String) {
+        queue.async {
+            adaptors.forEach { $0.task(task, didCrossWaypoint: waypoint) }
         }
     }
 
