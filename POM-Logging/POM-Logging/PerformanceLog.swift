@@ -1,11 +1,10 @@
 //
 //  PerformanceLogger.swift
-//  POM-Logging
-//
 //  Copyright © 2017 Possible Mobile. All rights reserved.
 //
 
 import Foundation
+
 
 class PerformanceLog: NSObject {
     
@@ -15,7 +14,7 @@ class PerformanceLog: NSObject {
         static let filename = "PerformanceLogName"
     }
     
-    struct Task: Equatable {
+    struct Task: Equatable, CustomStringConvertible {
         let name: String
         let category: String
         let startDate: Date
@@ -24,6 +23,16 @@ class PerformanceLog: NSObject {
             let startTimestamp = startDate.timeIntervalSinceReferenceDate
             let endTimestamp = Date().timeIntervalSinceReferenceDate
             return Double(endTimestamp - startTimestamp)
+        }
+
+        var description: String {
+            let value = "\(name): (\(category)) started at \(startDate)"
+            return value
+        }
+
+        var formattedDurationDescription: String {
+            let value = "(\(category)) \(name): \(duration)"
+            return value
         }
         
         public static func ==(lhs: Task, rhs: Task) -> Bool {
@@ -35,20 +44,19 @@ class PerformanceLog: NSObject {
     }
     
     static private var tasks: [Task] = []
-    static private var adaptors: [LogAdaptor] = []
+    static private var adaptors: [TaskLogAdaptor] = []
     static private var queue: DispatchQueue = DispatchQueue(label: "PerformanceLog")
     
     static private var launchTask: Task?
     
-    static func attach(adaptor: LogAdaptor) {
+    static func attach(adaptor: TaskLogAdaptor) {
         queue.async {
             adaptors.append(adaptor)
         }
     }
     
     static func launchStarted() {
-        mark("Begin Session")
-        launchTask = Task(name: "Launch", category: "Launch", startDate: Date())
+        launchTask = start("Launch", category: "Launch")
     }
     
     static func launchFinished() {
@@ -59,14 +67,24 @@ class PerformanceLog: NSObject {
     @discardableResult
     static func start(_ task: String, category: String) -> Task {
         let task = Task(name: task, category: category, startDate: Date())
+
+        notifyAdaptorsDidStartTask(task)
+
         queue.async {
             tasks.append(task)
         }
+
         return task
+    }
+
+    static func task(_ taskName: String, didCrossWaypoint waypoint: String) {
+        guard let task = taskNamed(taskName) else { return }
+
+        notifyAdaptorsTask(task, didCrossWaypoint: waypoint)
     }
     
     static func end(_ task: Task) {
-        logPerf("\(Date()), \(task.category), \(task.name), \(task.duration)")
+        notifyAdaptorsDidEndTask(task)
         
         queue.async {
             tasks = tasks.filter({ $0 != task })
@@ -78,19 +96,9 @@ class PerformanceLog: NSObject {
     /// Ex: A task should be started in the AppDelegate but needs to be ended when a particular view controller has appeared.
     /// Without careful consideration it is possible to have multiple `Task` objects running with the same name and this method will only end the first one it finds.
     static func end(taskNamed name: String) {
-        var foundTask: Task?
+        guard let task = taskNamed(name) else { return }
 
-        queue.sync {
-            foundTask = tasks.filter { $0.name == name }.first
-        }
-
-        if let task = foundTask {
-            end(task)
-        }
-    }
-    
-    static func mark(_ marker: String) {
-        logPerf("\(Date()), Marker, \(marker), N/A")
+        end(task)
     }
     
     static func measure(_ task: String, category: String, activity: (()->())) {
@@ -98,12 +106,35 @@ class PerformanceLog: NSObject {
         activity()
         end(task)
     }
-    
-    static func logPerf(_ s: String) {
+
+
+    // MARK: - Private
+
+    private static func taskNamed(_ taskName: String) -> PerformanceLog.Task? {
+        var foundTask: Task?
+
+        queue.sync {
+            foundTask = tasks.filter { $0.name == taskName }.first
+        }
+
+        return foundTask
+    }
+
+    private static func notifyAdaptorsDidStartTask(_ task: PerformanceLog.Task) {
         queue.async {
-            for adaptor in adaptors {
-                adaptor.log("⏱ \(s)")
-            }
+            adaptors.forEach { $0.didStartTask(task) }
+        }
+    }
+
+    private static func notifyAdaptorsTask(_ task: PerformanceLog.Task, didCrossWaypoint waypoint: String) {
+        queue.async {
+            adaptors.forEach { $0.task(task, didCrossWaypoint: waypoint) }
+        }
+    }
+
+    private static func notifyAdaptorsDidEndTask(_ task: PerformanceLog.Task) {
+        queue.async {
+            adaptors.forEach { $0.didEndTask(task) }
         }
     }
 }

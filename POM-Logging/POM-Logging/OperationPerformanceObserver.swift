@@ -1,12 +1,10 @@
 //
 //  OperationPerformanceObserver.swift
-//  POM-Logging
-//
-//  Created by Bradford Dillon on 5/18/17.
 //  Copyright © 2017 Possible Mobile. All rights reserved.
 //
 
 import Foundation
+
 
 extension PerformanceLog {
     static func measure(operation: Operation, name: String, category: String) {
@@ -14,6 +12,7 @@ extension PerformanceLog {
         operation.addObserver(observer)
     }
 }
+
 
 class OperationPerformanceObserver: OperationObserver {
     
