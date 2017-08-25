@@ -33,7 +33,7 @@ class OperationPerformanceObserver: OperationObserver {
         return
     }
     
-    func operationDidFinish(_ operation: Operation, errors: [NSError]) {
+    func operationDidFinish(_ operation: Operation, errors: [Error]) {
         guard let task = task else { return }
         PerformanceLog.end(task)
     }
